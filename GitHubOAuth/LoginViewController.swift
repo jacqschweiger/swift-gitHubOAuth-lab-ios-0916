@@ -8,8 +8,11 @@
 
 import UIKit
 import Locksmith
+import SafariServices
 
 class LoginViewController: UIViewController {
+    
+    var safariViewController: SFSafariViewController!
     
     @IBOutlet weak var loginImageView: UIImageView!
     @IBOutlet weak var loginButton: UIButton!
@@ -24,7 +27,9 @@ class LoginViewController: UIViewController {
         super.viewDidLoad()
         
         setUpImageViewAnimation()
-
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(safariLogin), name: .closeSafariVC, object: nil )
+        
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -41,7 +46,7 @@ class LoginViewController: UIViewController {
         super.viewDidLayoutSubviews()
         
         configureButton()
-
+        
     }
     
     // MARK: Set Up View
@@ -68,9 +73,25 @@ class LoginViewController: UIViewController {
     // MARK: Action
     
     @IBAction func loginButtonTapped(_ sender: UIButton) {
+        self.safariViewController = SFSafariViewController(url: GitHubRequestType.oauth.url)
+        print(GitHubRequestType.oauth.url)
+        present(self.safariViewController, animated: true, completion: nil)
         
     }
-
+    
+    func safariLogin(_ notification: Notification) {
+        let url = notification.object as! URL
+        print("url = \(url)")
+        
+        safariViewController.dismiss(animated: true, completion: nil)
+        
+        GitHubAPIClient.request(.token(url: url), completionHandler: { (json, starred, error) in
+            if error == nil {
+                NotificationCenter.default.post(name: .closeLoginVC, object: nil)
+            }
+        })
+        
+    }
 }
 
 
